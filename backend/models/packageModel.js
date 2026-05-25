@@ -13,6 +13,11 @@ const packageSchema = new mongoose.Schema(
     destination: { type: mongoose.Schema.Types.ObjectId, ref: 'Destination' },
     status: { type: String, enum: ['active', 'inactive'], default: 'active' },
     featured: { type: Boolean, default: false },
+    availabilityStatus: { type: String, enum: ['Available', 'Limited Seats', 'Sold Out'], default: 'Available' },
+    travelDates: [{ type: String }],
+    travelType: { type: String, default: 'Group Tour' },
+    included: [{ type: String }],
+    excluded: [{ type: String }],
   },
   { timestamps: true }
 );

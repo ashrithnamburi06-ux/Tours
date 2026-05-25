@@ -17,6 +17,7 @@
             return r.destination && (r.destination.name || r.destination) || '—';
           }},
         { key: 'duration', label: 'Duration', fn: function (r) { return r.duration || '—'; }},
+        { key: 'availabilityStatus', label: 'Availability', field: 'availabilityStatus' },
         { key: 'status', label: 'Status', type: 'status' },
       ],
       formFields: [
@@ -27,10 +28,15 @@
         { name: 'destination', label: 'Destination ID', type: 'text' },
         { name: 'category', label: 'Category ID', type: 'text' },
         { name: 'featured', label: 'Featured', type: 'checkbox' },
+        { name: 'availabilityStatus', label: 'Availability Status', type: 'select', options: ['Available', 'Limited Seats', 'Sold Out'] },
+        { name: 'travelType', label: 'Travel Type', type: 'text' },
+        { name: 'travelDates', label: 'Travel Dates (comma-separated)', type: 'text' },
         { name: 'status', label: 'Status', type: 'select', options: ['active', 'inactive'] },
         { name: 'description', label: 'Overview', type: 'textarea' },
         { name: 'itinerary', label: 'Itinerary', type: 'textarea', apiField: 'description' },
         { name: 'imageUrl', label: 'Image URL', type: 'text', apiField: 'images' },
+        { name: 'included', label: 'Included Details (one per line)', type: 'textarea' },
+        { name: 'excluded', label: 'Excluded Details (one per line)', type: 'textarea' },
       ],
       toPayload: function (fd) {
         var p = {
@@ -41,6 +47,11 @@
           description: [fd.description, fd.itinerary].filter(Boolean).join('\n\n'),
           status: fd.status || 'active',
           featured: !!fd.featured,
+          availabilityStatus: fd.availabilityStatus || 'Available',
+          travelType: fd.travelType || 'Group Tour',
+          travelDates: fd.travelDates ? fd.travelDates.split(',').map(function (d) { return d.trim(); }).filter(Boolean) : [],
+          included: fd.included ? fd.included.split('\n').map(function (x) { return x.trim(); }).filter(Boolean) : [],
+          excluded: fd.excluded ? fd.excluded.split('\n').map(function (x) { return x.trim(); }).filter(Boolean) : []
         };
         if (fd.destination) p.destination = fd.destination;
         if (fd.category) p.category = fd.category;
@@ -428,6 +439,15 @@
           val = record[f.apiField];
         }
         if (f.apiField === 'images' && Array.isArray(val)) val = val[0];
+        
+        // Format array values into strings for inputs
+        if (Array.isArray(val)) {
+          if (f.name === 'travelDates') {
+            val = val.join(', ');
+          } else if (f.name === 'included' || f.name === 'excluded') {
+            val = val.join('\n');
+          }
+        }
         if (f.type === 'checkbox') {
           return (
             '<div class="col-md-6 mb-3"><div class="form-check mt-4">' +

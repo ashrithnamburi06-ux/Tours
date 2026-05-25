@@ -62,6 +62,148 @@
             overviewEl.innerHTML = pkg.description;
         }
 
+        // 1. Render Inclusions (Included details)
+        const includedList = document.querySelector('.single-feature-list ul.items-list:not(.two)');
+        if (includedList && pkg.included && pkg.included.length > 0) {
+            includedList.innerHTML = pkg.included.map(inc => `
+                <li>
+                    <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15V16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8C16 12.4183 12.4183 16 8 16V15C11.866 15 15 11.866 15 8Z"></path>
+                        <path d="M11.6947 6.45795L7.24644 10.9086C7.17556 10.9771 7.08572 11.0126 6.99596 11.0126C6.9494 11.0127 6.90328 11.0035 6.86027 10.9857C6.81727 10.9678 6.77822 10.9416 6.7454 10.9086L4.3038 8.46699C4.16436 8.32987 4.16436 8.10539 4.3038 7.96595L5.16652 7.10083C5.29892 6.96851 5.53524 6.96851 5.66764 7.10083L6.99596 8.42915L10.3309 5.09179C10.3638 5.05887 10.4028 5.03274 10.4457 5.01489C10.4887 4.99705 10.5347 4.98784 10.5812 4.98779C10.6757 4.98779 10.7656 5.02563 10.8317 5.09179L11.6944 5.95699C11.8341 6.09643 11.8341 6.32091 11.6947 6.45795Z"></path>
+                    </svg>
+                    ${inc}
+                </li>
+            `).join('');
+        }
+
+        // 2. Render Exclusions (Excluded details)
+        const excludedList = document.querySelector('.single-feature-list ul.items-list.two');
+        if (excludedList && pkg.excluded && pkg.excluded.length > 0) {
+            excludedList.innerHTML = pkg.excluded.map(exc => `
+                <li>
+                    <svg class="exclude" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                        <g>
+                            <path d="M15 8C15 4.13401 11.866 1 8 1C4.13401 1 1 4.13401 1 8C1 11.866 4.13401 15 8 15C11.866 15 15 11.866 15 8ZM16 8C16 12.4183 12.4183 16 8 16C3.58172 16 0 12.4183 0 8C0 3.58172 3.58172 0 8 0C12.4183 0 16 3.58172 16 8Z"></path>
+                            <path d="M6.00165 5.00036C5.8601 5.00368 5.72612 5.05514 5.62413 5.15703L5.1296 5.65267C4.89714 5.88495 4.92646 6.28828 5.19443 6.55662L6.67129 8.03561L5.19443 9.51394C4.92646 9.78219 4.89704 10.1856 5.1296 10.4184L5.62413 10.9136C5.8566 11.1458 6.2592 11.117 6.52753 10.8486L8.0044 9.36982L9.48126 10.8486C9.74978 11.117 10.1527 11.1458 10.3847 10.9136L10.8799 10.4184C11.1119 10.1857 11.0831 9.78228 10.8145 9.51394L9.33769 8.03561L10.8145 6.55662C11.0831 6.28828 11.1119 5.88495 10.8799 5.65267L10.3847 5.15703C10.1527 4.92429 9.74978 4.9537 9.48126 5.22241L8.0044 6.70084L6.52753 5.2225C6.37677 5.07109 6.18321 4.99594 6.00165 5.00036Z"></path>
+                        </g>
+                    </svg>
+                    ${exc}
+                </li>
+            `).join('');
+        }
+
+        // 3. Render Availability Badge
+        const availabilityArea = document.querySelector('.pricing-and-booking-area .batch');
+        if (availabilityArea) {
+            let badgeColor = '#28a745'; // Green for Available
+            if (pkg.availabilityStatus === 'Limited Seats') {
+                badgeColor = '#ffc107'; // Yellow for Limited Seats
+            } else if (pkg.availabilityStatus === 'Sold Out') {
+                badgeColor = '#dc3545'; // Red for Sold Out
+            }
+            availabilityArea.innerHTML = `<span style="background-color: ${badgeColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${pkg.availabilityStatus || 'Available'}</span>`;
+        }
+
+        // Disable booking if sold out
+        const checkAvailabilityBtn = document.querySelector('.pricing-and-booking-area button.primary-btn1:not(.transparent)');
+        if (pkg.availabilityStatus === 'Sold Out' && checkAvailabilityBtn) {
+            checkAvailabilityBtn.disabled = true;
+            checkAvailabilityBtn.style.backgroundColor = '#6c757d';
+            checkAvailabilityBtn.style.cursor = 'not-allowed';
+            checkAvailabilityBtn.style.borderColor = '#6c757d';
+            checkAvailabilityBtn.innerHTML = '<span>Sold Out</span>';
+        }
+
+        // 4. Populate Dynamic Dates in booking modal
+        const dateInput = document.querySelector('input[name="tourBookingCalendar"]');
+        if (dateInput && pkg.travelDates && pkg.travelDates.length > 0) {
+            const selectHtml = `
+                <select name="travelDate" class="form-select" id="booking-travel-date" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%;">
+                    ${pkg.travelDates.map(date => `<option value="${date}">${date}</option>`).join('')}
+                </select>
+            `;
+            const parent = dateInput.parentElement;
+            if (parent) {
+                parent.innerHTML = selectHtml;
+            }
+        }
+
+        // 5. Handle Booking Modal Form Submissions / Checkout Redirection
+        const bookNowBtn = document.querySelector('#bookingModal .btn-area a.primary-btn1');
+        if (bookNowBtn) {
+            bookNowBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                
+                const dateSelect = document.getElementById('booking-travel-date');
+                const selectedDate = dateSelect ? dateSelect.value : '';
+                
+                const adultsInput = document.querySelector('input[name="adult_quantity"]');
+                const childInput = document.querySelector('input[name="child_quantity"]');
+                const adults = adultsInput ? adultsInput.value : 1;
+                const children = childInput ? childInput.value : 0;
+                
+                if (!selectedDate) {
+                    alert('Please select a travel date.');
+                    return;
+                }
+                
+                window.location.href = `checkout.html?package=${pkg.slug}&date=${encodeURIComponent(selectedDate)}&adults=${adults}&children=${children}`;
+            });
+        }
+
+        // 6. Handle Inquiry Form Submission
+        const enquiryForm = document.querySelector('#enquiryModal form');
+        if (enquiryForm) {
+            // Unbind any previous listener
+            const newForm = enquiryForm.cloneNode(true);
+            enquiryForm.parentNode.replaceChild(newForm, enquiryForm);
+            
+            newForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                
+                const nameInput = newForm.querySelector('input[type="text"]:not([name])'); // Full Name
+                const emailInput = newForm.querySelector('input[type="email"]');
+                const peopleInput = newForm.querySelector('input[placeholder="Number of people"]');
+                const dateInput = newForm.querySelector('input[name="inOut"]');
+                const detailsInput = newForm.querySelector('textarea');
+                
+                const payload = {
+                    name: nameInput ? nameInput.value : '',
+                    email: emailInput ? emailInput.value : '',
+                    numberOfPeople: peopleInput ? Number(peopleInput.value) || 1 : 1,
+                    travelDate: dateInput ? dateInput.value : '',
+                    details: detailsInput ? detailsInput.value : ''
+                };
+                
+                if (!payload.name || !payload.email || !payload.details) {
+                    alert('Please fill out Name, Email, and Tour Details.');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(apiUrl('/inquiries'), {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (response.ok) {
+                        alert('Your inquiry was submitted successfully! Our agents will contact you shortly.');
+                        newForm.reset();
+                        // Hide modal using bootstrap
+                        jQuery('#enquiryModal').modal('hide');
+                    } else {
+                        const err = await response.json();
+                        alert('Failed to submit inquiry: ' + (err.message || 'Server error'));
+                    }
+                } catch (err) {
+                    alert('Cannot reach the server right now. Please try again later.');
+                }
+            });
+        }
+
         renderGallery(pkg);
     }
 

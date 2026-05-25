@@ -9,7 +9,13 @@
         filters: {
             destination: [],
             category: [],
-            duration: []
+            duration: [],
+            travelType: [],
+            availability: [],
+            date: '',
+            priceMin: 10,
+            priceMax: 3000,
+            search: ''
         }
     };
 
@@ -42,6 +48,40 @@
                 }
             });
         }
+
+        if (params.has('travelType')) {
+            const types = params.get('travelType').split(',');
+            types.forEach(t => {
+                if (!state.filters.travelType.includes(t)) {
+                    state.filters.travelType.push(t);
+                }
+            });
+        }
+
+        if (params.has('availability')) {
+            const avails = params.get('availability').split(',');
+            avails.forEach(a => {
+                if (!state.filters.availability.includes(a)) {
+                    state.filters.availability.push(a);
+                }
+            });
+        }
+
+        if (params.has('date')) {
+            state.filters.date = params.get('date');
+        }
+
+        if (params.has('priceMin')) {
+            state.filters.priceMin = parseInt(params.get('priceMin'), 10) || 10;
+        }
+
+        if (params.has('priceMax')) {
+            state.filters.priceMax = parseInt(params.get('priceMax'), 10) || 3000;
+        }
+
+        if (params.has('search')) {
+            state.filters.search = params.get('search');
+        }
     }
 
     async function loadFilters() {
@@ -63,9 +103,15 @@
             }
             
             syncDurationsFilter();
+            renderAdditionalFilters();
+            syncAdditionalFilters();
+            initPriceSlider();
 
         } catch (error) {
             /* keep static filter UI */
+            renderAdditionalFilters();
+            syncAdditionalFilters();
+            initPriceSlider();
         }
     }
 
@@ -135,6 +181,178 @@
         });
     }
 
+    function renderAdditionalFilters() {
+        const sidebar = document.querySelector('.sidebar-wrapper');
+        if (!sidebar) return;
+
+        if (document.getElementById('availability-filter-list')) return;
+
+        const widgets = sidebar.querySelectorAll('.single-widgets');
+        let durationWidget = null;
+        widgets.forEach(w => {
+            const titleEl = w.querySelector('h5');
+            if (titleEl && titleEl.textContent.trim() === 'Duration') {
+                durationWidget = w;
+            }
+        });
+
+        const insertAfter = durationWidget || widgets[widgets.length - 1];
+
+        // 1. Availability Filter Widget
+        const availWidget = document.createElement('div');
+        availWidget.className = 'single-widgets';
+        availWidget.innerHTML = `
+            <div class="widget-title">
+                <h5>Availability</h5>
+            </div>
+            <div class="checkbox-container two">
+                <ul id="availability-filter-list">
+                    <li>
+                        <label class="containerss">
+                            <input type="checkbox" value="Available" class="filter-checkbox" data-filter-type="availability">
+                            <span class="checkmark"></span>
+                            <strong><span>Available</span></strong>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="containerss">
+                            <input type="checkbox" value="Limited Seats" class="filter-checkbox" data-filter-type="availability">
+                            <span class="checkmark"></span>
+                            <strong><span>Limited Seats</span></strong>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="containerss">
+                            <input type="checkbox" value="Sold Out" class="filter-checkbox" data-filter-type="availability">
+                            <span class="checkmark"></span>
+                            <strong><span>Sold Out</span></strong>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        `;
+
+        // 2. Travel Type Filter Widget
+        const typeWidget = document.createElement('div');
+        typeWidget.className = 'single-widgets';
+        typeWidget.innerHTML = `
+            <div class="widget-title">
+                <h5>Travel Type</h5>
+            </div>
+            <div class="checkbox-container two">
+                <ul id="traveltype-filter-list">
+                    <li>
+                        <label class="containerss">
+                            <input type="checkbox" value="Group Tour" class="filter-checkbox" data-filter-type="travelType">
+                            <span class="checkmark"></span>
+                            <strong><span>Group Tour</span></strong>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="containerss">
+                            <input type="checkbox" value="Solo Tour" class="filter-checkbox" data-filter-type="travelType">
+                            <span class="checkmark"></span>
+                            <strong><span>Solo Tour</span></strong>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="containerss">
+                            <input type="checkbox" value="Family Tour" class="filter-checkbox" data-filter-type="travelType">
+                            <span class="checkmark"></span>
+                            <strong><span>Family Tour</span></strong>
+                        </label>
+                    </li>
+                </ul>
+            </div>
+        `;
+
+        // 3. Travel Date Filter Widget
+        const dateWidget = document.createElement('div');
+        dateWidget.className = 'single-widgets';
+        dateWidget.innerHTML = `
+            <div class="widget-title">
+                <h5>Travel Date</h5>
+            </div>
+            <div style="padding: 10px 0;">
+                <input type="date" id="date-filter-input" class="form-control" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc; width: 100%; color: #333; background: #fff;">
+            </div>
+        `;
+
+        insertAfter.parentNode.insertBefore(dateWidget, insertAfter.nextSibling);
+        insertAfter.parentNode.insertBefore(typeWidget, insertAfter.nextSibling);
+        insertAfter.parentNode.insertBefore(availWidget, insertAfter.nextSibling);
+
+        const dateInput = document.getElementById('date-filter-input');
+        if (dateInput) {
+            dateInput.addEventListener('change', function() {
+                state.filters.date = dateInput.value;
+                updateUrlParams();
+                loadPackages();
+            });
+        }
+    }
+
+    function syncAdditionalFilters() {
+        const availList = document.getElementById('availability-filter-list');
+        if (availList) {
+            availList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.classList.add('filter-checkbox');
+                if (state.filters.availability.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+        }
+
+        const typeList = document.getElementById('traveltype-filter-list');
+        if (typeList) {
+            typeList.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                cb.classList.add('filter-checkbox');
+                if (state.filters.travelType.includes(cb.value)) {
+                    cb.checked = true;
+                }
+            });
+        }
+
+        const dateInput = document.getElementById('date-filter-input');
+        if (dateInput && state.filters.date) {
+            dateInput.value = state.filters.date;
+        }
+
+        if (state.filters.search) {
+            const searchInputs = document.querySelectorAll('.search-area input, .search-input input');
+            searchInputs.forEach(input => {
+                input.value = state.filters.search;
+            });
+        }
+    }
+
+    function initPriceSlider() {
+        if (typeof jQuery !== 'undefined' && jQuery.fn.slider) {
+            const sliderEl = jQuery("#slider-range");
+            if (sliderEl.length) {
+                sliderEl.empty();
+                sliderEl.slider({
+                    range: true,
+                    min: 10,
+                    max: 3000,
+                    values: [state.filters.priceMin, state.filters.priceMax],
+                    slide: function(event, ui) {
+                        jQuery("#slider-range-value1").text("$" + ui.values[0].toLocaleString());
+                        jQuery("#slider-range-value2").text("$" + ui.values[1].toLocaleString());
+                    },
+                    change: function(event, ui) {
+                        state.filters.priceMin = ui.values[0];
+                        state.filters.priceMax = ui.values[1];
+                        updateUrlParams();
+                        loadPackages();
+                    }
+                });
+                jQuery("#slider-range-value1").text("$" + state.filters.priceMin.toLocaleString());
+                jQuery("#slider-range-value2").text("$" + state.filters.priceMax.toLocaleString());
+            }
+        }
+    }
+
     function setupFilterListeners() {
         document.addEventListener('change', function(e) {
             if (e.target && e.target.classList.contains('filter-checkbox')) {
@@ -149,7 +367,6 @@
                     state.filters[type] = state.filters[type].filter(v => v !== value);
                 }
                 
-                // Update URL params without reloading page
                 updateUrlParams();
                 loadPackages();
             }
@@ -158,12 +375,46 @@
         const clearBtn = document.getElementById('clear-filters');
         if (clearBtn) {
             clearBtn.addEventListener('click', function() {
-                state.filters = { destination: [], category: [], duration: [] };
+                state.filters = {
+                    destination: [],
+                    category: [],
+                    duration: [],
+                    travelType: [],
+                    availability: [],
+                    date: '',
+                    priceMin: 10,
+                    priceMax: 3000,
+                    search: ''
+                };
                 document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = false);
+                const dateInput = document.getElementById('date-filter-input');
+                if (dateInput) dateInput.value = '';
+                const searchInputs = document.querySelectorAll('.search-area input, .search-input input');
+                searchInputs.forEach(input => input.value = '');
+                
+                if (typeof jQuery !== 'undefined' && jQuery.fn.slider) {
+                    jQuery("#slider-range").slider("values", [10, 3000]);
+                    jQuery("#slider-range-value1").text("$10");
+                    jQuery("#slider-range-value2").text("$3,000");
+                }
+                
                 updateUrlParams();
                 loadPackages();
             });
         }
+
+        // Global search form interception
+        document.querySelectorAll('.search-area, .search-input form').forEach(form => {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const input = form.querySelector('input');
+                if (input) {
+                    state.filters.search = input.value.trim();
+                    updateUrlParams();
+                    loadPackages();
+                }
+            });
+        });
     }
 
     function updateUrlParams() {
@@ -172,6 +423,12 @@
         if (state.filters.destination.length) url.searchParams.set('destination', state.filters.destination.join(','));
         if (state.filters.category.length) url.searchParams.set('category', state.filters.category.join(','));
         if (state.filters.duration.length) url.searchParams.set('duration', state.filters.duration.join(','));
+        if (state.filters.travelType.length) url.searchParams.set('travelType', state.filters.travelType.join(','));
+        if (state.filters.availability.length) url.searchParams.set('availability', state.filters.availability.join(','));
+        if (state.filters.date) url.searchParams.set('date', state.filters.date);
+        if (state.filters.priceMin !== 10) url.searchParams.set('priceMin', state.filters.priceMin);
+        if (state.filters.priceMax !== 3000) url.searchParams.set('priceMax', state.filters.priceMax);
+        if (state.filters.search) url.searchParams.set('search', state.filters.search);
         window.history.pushState({}, '', url);
     }
 
@@ -192,7 +449,40 @@
         });
         
         const swiperId = 'swiper-' + Math.random().toString(36).substr(2, 9);
-        const badgeHtml = pkg.featured ? `<div class="batch"><span class="discount">Featured</span></div>` : (pkg.badge ? `<div class="batch"><span>${pkg.badge}</span></div>` : '');
+        
+        // Custom Availability Badge
+        let badgeHtml = '';
+        if (pkg.featured) {
+            badgeHtml = `<div class="batch"><span class="discount">Featured</span></div>`;
+        } else if (pkg.availabilityStatus) {
+            let badgeColor = '#28a745'; // Green for Available
+            if (pkg.availabilityStatus === 'Limited Seats') {
+                badgeColor = '#ffc107'; // Yellow
+            } else if (pkg.availabilityStatus === 'Sold Out') {
+                badgeColor = '#dc3545'; // Red
+            }
+            badgeHtml = `<div class="batch"><span style="background-color: ${badgeColor}; color: white; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold;">${pkg.availabilityStatus}</span></div>`;
+        } else if (pkg.badge) {
+            badgeHtml = `<div class="batch"><span>${pkg.badge}</span></div>`;
+        }
+
+        // Sold Out booking control
+        let bookNowBtnHtml = '';
+        if (pkg.availabilityStatus === 'Sold Out') {
+            bookNowBtnHtml = `
+                <a href="#" class="primary-btn1" style="flex: 1; height: 40px; line-height: 40px; justify-content: center; padding: 0 8px; font-size: 12px; background-color: #6c757d; border-color: #6c757d; cursor: not-allowed;" onclick="event.preventDefault(); alert('This package is sold out and no longer available for booking.');">
+                    <span>Sold Out</span>
+                    <span>Sold Out</span>
+                </a>
+            `;
+        } else {
+            bookNowBtnHtml = `
+                <a href="checkout.html?package=${pkg.slug}" class="primary-btn1" style="flex: 1; height: 40px; line-height: 40px; justify-content: center; padding: 0 8px; font-size: 12px;">
+                    <span>Book Now</span>
+                    <span>Book Now</span>
+                </a>
+            `;
+        }
 
         return `
             <div class="col-md-6 item wow animate fadeInDown" data-wow-delay="200ms" data-wow-duration="1500ms">
@@ -271,10 +561,7 @@
                                         <span>View Details</span>
                                         <span>View Details</span>
                                     </a>
-                                    <a href="checkout.html?package=${pkg.slug}" class="primary-btn1" style="flex: 1; height: 40px; line-height: 40px; justify-content: center; padding: 0 8px; font-size: 12px;">
-                                        <span>Book Now</span>
-                                        <span>Book Now</span>
-                                    </a>
+                                    ${bookNowBtnHtml}
                                 </div>
                             </div>
                             <svg class="divider" height="6" viewBox="0 0 374 6" xmlns="http://www.w3.org/2000/svg">
@@ -337,28 +624,55 @@
                 return !pkg.status || pkg.status === 'active';
             });
 
+            // 1. Search Query Filter
+            if (state.filters.search) {
+                const searchLower = state.filters.search.toLowerCase();
+                activePackages = activePackages.filter(function (pkg) {
+                    const title = (pkg.title || '').toLowerCase();
+                    const desc = (pkg.description || '').toLowerCase();
+                    const dest = (refName(pkg.destination) || '').toLowerCase();
+                    const cat = (refName(pkg.category) || '').toLowerCase();
+                    const type = (pkg.travelType || '').toLowerCase();
+                    const status = (pkg.availabilityStatus || '').toLowerCase();
+                    const dur = (pkg.duration || '').toLowerCase();
+                    
+                    return title.indexOf(searchLower) !== -1 ||
+                           desc.indexOf(searchLower) !== -1 ||
+                           dest.indexOf(searchLower) !== -1 ||
+                           cat.indexOf(searchLower) !== -1 ||
+                           type.indexOf(searchLower) !== -1 ||
+                           status.indexOf(searchLower) !== -1 ||
+                           dur.indexOf(searchLower) !== -1;
+                });
+            }
+
+            // 2. Destination Filter
             if (state.filters.destination.length) {
                 activePackages = activePackages.filter(function (pkg) {
-                    var destName = refName(pkg.destination).toLowerCase();
+                    const destName = refName(pkg.destination).toLowerCase();
                     return state.filters.destination.some(function (f) {
                         return destName.indexOf(f) !== -1 || f.indexOf(destName) !== -1;
                     });
                 });
             }
+
+            // 3. Category Filter
             if (state.filters.category.length) {
                 activePackages = activePackages.filter(function (pkg) {
-                    var catName = refName(pkg.category).toLowerCase();
+                    const catName = refName(pkg.category).toLowerCase();
                     return state.filters.category.some(function (f) {
                         return catName.indexOf(f) !== -1 || f.indexOf(catName) !== -1;
                     });
                 });
             }
+
+            // 4. Duration Filter
             if (state.filters.duration.length) {
                 activePackages = activePackages.filter(function (pkg) {
-                    var durStr = (pkg.duration || '').toLowerCase();
-                    var match = durStr.match(/\d+/);
+                    const durStr = (pkg.duration || '').toLowerCase();
+                    const match = durStr.match(/\d+/);
                     if (!match) return false;
-                    var days = parseInt(match[0], 10);
+                    const days = parseInt(match[0], 10);
                     
                     return state.filters.duration.some(function (f) {
                         if (f === '1-3') return days >= 1 && days <= 3;
@@ -369,6 +683,42 @@
                     });
                 });
             }
+
+            // 5. Travel Type Filter
+            if (state.filters.travelType.length) {
+                activePackages = activePackages.filter(function (pkg) {
+                    const typeStr = (pkg.travelType || 'Group Tour').toLowerCase();
+                    return state.filters.travelType.some(function (f) {
+                        return typeStr.indexOf(f.toLowerCase()) !== -1;
+                    });
+                });
+            }
+
+            // 6. Availability Status Filter
+            if (state.filters.availability.length) {
+                activePackages = activePackages.filter(function (pkg) {
+                    const availStr = (pkg.availabilityStatus || 'Available').toLowerCase();
+                    return state.filters.availability.some(function (f) {
+                        return availStr.indexOf(f.toLowerCase()) !== -1;
+                    });
+                });
+            }
+
+            // 7. Travel Date Filter
+            if (state.filters.date) {
+                activePackages = activePackages.filter(function (pkg) {
+                    if (!pkg.travelDates || pkg.travelDates.length === 0) return false;
+                    return pkg.travelDates.some(function (d) {
+                        return d === state.filters.date;
+                    });
+                });
+            }
+
+            // 8. Price Range Filter
+            activePackages = activePackages.filter(function (pkg) {
+                const price = pkg.price || 0;
+                return price >= state.filters.priceMin && price <= state.filters.priceMax;
+            });
             
             if (activePackages.length === 0) {
                 grid.innerHTML = '<div class="col-12"><p>No packages found matching your criteria.</p></div>';

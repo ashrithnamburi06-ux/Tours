@@ -6,7 +6,7 @@
   var USER_INFO_KEY = 'user_info';
 
   /** Set true when ready to enforce login on all admin pages */
-  var ADMIN_AUTH_ENFORCED = false;
+  var ADMIN_AUTH_ENFORCED = true;
 
   window.isAuthenticated = function () {
     return !!localStorage.getItem(AUTH_TOKEN_KEY);

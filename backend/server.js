@@ -18,6 +18,8 @@ const testimonialRoutes = require('./routes/testimonialRoutes');
 const homepageRoutes = require('./routes/homepageRoutes');
 const authRoutes = require('./routes/authRoutes');
 const galleryRoutes = require('./routes/galleryRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const inquiryRoutes = require('./routes/inquiryRoutes');
 
 const app = express();
 
@@ -79,6 +81,8 @@ app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/homepage', homepageRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/gallery', galleryRoutes);
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/inquiries', inquiryRoutes);
 
 // Error handling middleware
 app.use(notFound);

@@ -633,4 +633,16 @@
     loadOffers();
     loadGallery();
   }
+
+  // Intercept homepage search forms and redirect to the packages list page
+  document.querySelectorAll('.search-area, .search-input form').forEach(function (form) {
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var input = form.querySelector('input');
+      if (input) {
+        var query = input.value.trim();
+        window.location.href = 'travel-package-02.html?search=' + encodeURIComponent(query);
+      }
+    });
+  });
 })();
