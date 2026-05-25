@@ -5,13 +5,8 @@
   var PLACEHOLDER_IMAGE = 'images/tour-package-img1.jpg';
 
   function resolveApiBase() {
-    var host = window.location.hostname;
-    var isLocal =
-      !host ||
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      window.location.protocol === 'file:';
-    return isLocal ? 'http://localhost:5000/api' : '/api';
+    // Connect permanently to the deployed Render backend for both production and development
+    return 'https://tours-yd3g.onrender.com/api';
   }
 
   function getToken() {

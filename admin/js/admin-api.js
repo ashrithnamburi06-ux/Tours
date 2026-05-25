@@ -2,15 +2,7 @@
 (function () {
   'use strict';
 
-  var API_BASE_URL = (function () {
-    var host = window.location.hostname;
-    var isLocal =
-      !host ||
-      host === 'localhost' ||
-      host === '127.0.0.1' ||
-      window.location.protocol === 'file:';
-    return isLocal ? 'http://localhost:5000/api' : '/api';
-  })();
+  var API_BASE_URL = 'https://tours-yd3g.onrender.com/api';
 
   function normalizeList(json, key) {
     if (Array.isArray(json)) return json;

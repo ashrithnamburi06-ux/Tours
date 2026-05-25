@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+  var API_BASE_URL = window.API_BASE_URL || 'https://tours-yd3g.onrender.com/api';
 
   var locationSvg16 =
     '<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">' +

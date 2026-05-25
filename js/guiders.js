@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var API_BASE_URL = window.API_BASE_URL || 'http://localhost:5000/api';
+  var API_BASE_URL = window.API_BASE_URL || 'https://tours-yd3g.onrender.com/api';
 
   function renderGuiderCard(guider, index) {
     var delay = (index % 4) * 200 + 200;
